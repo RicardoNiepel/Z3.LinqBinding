@@ -8,9 +8,57 @@ namespace Z3.LinqBindingDemo
     {
         private static void Main(string[] args)
         {
+            // Basic Usage
             using (var ctx = new Z3Context())
             {
-                ctx.Log = Console.Out;
+                ctx.Log = Console.Out; // see internal logging
+
+                var theorem = from t in ctx.NewTheorem(new { x = default(bool), y = default(bool) })
+                              where t.x ^ t.y
+                              select t;
+
+                var result = theorem.Solve();
+                Console.WriteLine(result);
+            }
+
+            // Advanced Usage
+            using (var ctx = new Z3Context())
+            {
+                ctx.Log = Console.Out; // see internal logging
+
+                var theorem = from t in ctx.NewTheorem<Symbols<int, int>>()
+                              where t.X1 < t.X2 + 1
+                              where t.X1 > 2
+                              where t.X1 != t.X2
+                              select t;
+
+                var result = theorem.Solve();
+                Console.WriteLine(result);
+            }
+
+            // Sudoku Extension Usage (Z3.LinqBinding.Sudoku)
+            using (var ctx = new Z3Context())
+            {
+                var theorem = from t in SudokuTheorem.Create(ctx)
+                              where t.Cell13 == 2 && t.Cell16 == 1 && t.Cell18 == 6
+                              where t.Cell23 == 7 && t.Cell26 == 4
+                              where t.Cell31 == 5 && t.Cell37 == 9
+                              where t.Cell42 == 1 && t.Cell44 == 3
+                              where t.Cell51 == 8 && t.Cell55 == 5 && t.Cell59 == 4
+                              where t.Cell66 == 6 && t.Cell68 == 2
+                              where t.Cell73 == 6 && t.Cell79 == 7
+                              where t.Cell84 == 8 && t.Cell87 == 3
+                              where t.Cell92 == 4 && t.Cell94 == 9 && t.Cell97 == 2
+                              select t;
+
+                var result = theorem.Solve();
+                Console.WriteLine(result);
+            }
+
+            // All samples
+            using (var ctx = new Z3Context())
+            {
+                ctx.Log = Console.Out; // see internal logging
 
                 Print(from t in ctx.NewTheorem(new { x = default(bool) })
                       where t.x && !t.x
