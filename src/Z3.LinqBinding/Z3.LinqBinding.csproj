@@ -98,6 +98,8 @@
   <ItemGroup>
     <Compile Include="ITheoremGlobalRewriter.cs" />
     <Compile Include="ITheoremPredicateRewriter.cs" />
+    <Compile Include="ListExtensions.cs" />
+    <Compile Include="ShortestTheoremSearcher.cs" />
     <Compile Include="Symbols.cs" />
     <Compile Include="Symbols`2.cs" />
     <Compile Include="Symbols`5.cs" />
