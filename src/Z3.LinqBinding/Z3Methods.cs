@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Z3.LinqBinding
 {
@@ -7,6 +9,19 @@ namespace Z3.LinqBinding
     /// </summary>
     public static class Z3Methods
     {
+
+        /// <summary>
+        /// Creates a predicate constraining the given symbols as distinct values.
+        /// </summary>
+        /// <typeparam name="T">Type of the parameters.</typeparam>
+        /// <param name="symbols">Symbols that are required to be distinct.</param>
+        /// <returns>Predicate return value.</returns>
+        /// <remarks>This method should only be used within LINQ expressions.</remarks>
+        public static bool DistinctItems(this IEnumerable symbols /* type? */)
+        {
+            throw new NotSupportedException("This method should only be used in query expressions.");
+        }
+
         /// <summary>
         /// Creates a predicate constraining the given symbols as distinct values.
         /// </summary>

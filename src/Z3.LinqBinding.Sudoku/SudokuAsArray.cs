@@ -14,6 +14,9 @@ namespace Z3.LinqBinding.Sudoku
    /// </summary>
    public class SudokuAsArray
    {
+
+       private static readonly int[] Indices = Enumerable.Range(0, 9).ToArray();
+
       // The List property makes it easier to manipulate cells,
       public List<int> CellsList = Enumerable.Repeat(0, 81).ToList();
 
@@ -76,49 +79,17 @@ namespace Z3.LinqBinding.Sudoku
          {
             //Again we avoid Lambda closure side effects
             var r1 = r;
-            sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(new int[]
-                  {
-                     t.Cells[r1 * 9 ],
-                     t.Cells[r1 * 9+1],
-                     t.Cells[r1 * 9+2],
-                     t.Cells[r1 * 9+3],
-                     t.Cells[r1 * 9+4],
-                     t.Cells[r1 * 9+5],
-                     t.Cells[r1 * 9+6],
-                     t.Cells[r1 * 9+7],
-                     t.Cells[r1 * 9+8],
-                  }
-               )
-            );
+                sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(Indices.Select(j => t.Cells[r1 * 9 + j]).ToArray()));
 
-            // Ideally, we'd want to be able to formulate the following, but that would require moving further towards IQueryable
-            //sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(Indices.Select(j => t.CellsArray[r1 * 9 + j]).ToArray()));
-
-         }
+            }
 
          // Columns must have distinct digits
          for (int c = 0; c < 9; c++)
          {
             //Preventing closure side effects
             var c1 = c;
-            sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(new int[]
-                  {
-                     t.Cells[0 * 9 + c1],
-                     t.Cells[1 * 9 + c1],
-                     t.Cells[2 * 9 + c1],
-                     t.Cells[3 * 9 + c1],
-                     t.Cells[4 * 9 + c1],
-                     t.Cells[5 * 9 + c1],
-                     t.Cells[6 * 9 + c1],
-                     t.Cells[7 * 9 + c1],
-                     t.Cells[8 * 9 + c1],
-                  }
-               )
-            );
-
-            // Ideal form for IQueryable
-            //sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(Indices.Select(i => t.CellsArray[i * 9 + c1]).ToArray()));
-         }
+                sudokuTheorem = sudokuTheorem.Where(t => Z3Methods.Distinct(Indices.Select(i => t.Cells[i * 9 + c1]).ToArray()));
+            }
 
          // Boxes must have distinct digits
          for (int b = 0; b < 9; b++)

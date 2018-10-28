@@ -105,11 +105,36 @@ namespace Z3.LinqBindingDemo
                 Console.WriteLine(minimal == null ? "none" : minimal.ToString());
                 Console.WriteLine($"Time to solve: {endTime - startTime}");
 
+            }
 
+            // Testing simplification
+
+            using (var ctx = new Z3Context())
+            {
+                ctx.Log = Console.Out;
+                var can = new MissionariesAndCannibals() { NbMissionaries = 3, SizeBoat = 2, Length = 30 };
+
+                Console.WriteLine($"Non simplified version");
+                Console.WriteLine();
+                var theorem = can.Create(ctx);
+                theorem.SimplifyLambdas = false;
+                var startTime = stopwatch.Elapsed;
+                var minimal = theorem.Optimize(Optimization.Minimize, objMnC => objMnC.Length);
+                var endTime = stopwatch.Elapsed;
+                Console.WriteLine("Minimal Solution to missionaries and cannibals non simplified through Z3 optimization");
+                Console.WriteLine($"Time to solve: {endTime - startTime}");
+                Console.WriteLine($"simplified version");
+                Console.WriteLine();
+                theorem.SimplifyLambdas = true;
+                startTime = stopwatch.Elapsed;
+                minimal = theorem.Optimize(Optimization.Minimize, objMnC => objMnC.Length);
+                endTime = stopwatch.Elapsed;
+                Console.WriteLine("Minimal Solution to missionaries and cannibals simplified through Z3 optimization");
+                Console.WriteLine($"Time to solve: {endTime - startTime}");
             }
 
 
-            AllSamplesInSameContext();
+            //AllSamplesInSameContext();
 
             Console.Read();
 
