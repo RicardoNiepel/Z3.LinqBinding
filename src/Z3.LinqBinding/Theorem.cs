@@ -303,7 +303,7 @@ namespace Z3.LinqBinding
         private Environment GetEnvironment(Context context, Type targetType, string prefix)
         {
             var toReturn = new Environment();
-            if (targetType.IsArray || (targetType.IsGenericType && typeof(IEnumerable<>).IsAssignableFrom(targetType.GetGenericTypeDefinition())))
+            if (targetType.IsArray || (targetType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(targetType.GetGenericTypeDefinition())))
             {
                 Type elType;
                 if (targetType.IsArray)
@@ -546,7 +546,7 @@ namespace Z3.LinqBinding
 
                 //_context.LogWriteLine(context.ToString(c));
 
-                //_context.LogWriteLine(c.ToString());
+                _context.LogWriteLine(c.ToString());
             }
         }
 
@@ -695,7 +695,7 @@ namespace Z3.LinqBinding
                     value = Double.Parse(((RatNum)val).ToDecimalString(64), CultureInfo.InvariantCulture);
                     break;
                 case TypeCode.Object:
-                    if (parameterType.IsArray || (parameterType.IsGenericType && typeof(IEnumerable<>).IsAssignableFrom(parameterType.GetGenericTypeDefinition())))
+                    if (parameterType.IsArray || (parameterType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(parameterType.GetGenericTypeDefinition())))
                     {
                         Type eltType;
                         if (parameterType.IsArray)
@@ -873,9 +873,9 @@ namespace Z3.LinqBinding
                 case ExpressionType.Call:
                     return VisitCall(context, environment, (MethodCallExpression)expression, param);
                 case ExpressionType.ArrayIndex:
-                case ExpressionType.Index:
                     return VisitBinary(context, environment, (BinaryExpression)expression, param, (ctx, a, b) => ctx.MkSelect((ArrayExpr)a, b));
-
+                case ExpressionType.Index:
+                    return VisitIndex(context, environment, (IndexExpression)expression, param, (ctx, a, b) => ctx.MkSelect((ArrayExpr)a, b));
                 default:
                     throw new NotSupportedException("Unsupported expression node type encountered: " + expression.NodeType);
             }
@@ -1031,6 +1031,14 @@ namespace Z3.LinqBinding
             return ctor(context, Visit(context, environment, expression.Left, param), Visit(context, environment, expression.Right, param));
         }
 
+        
+        private Expr VisitIndex(Context context, Environment environment, IndexExpression expression, ParameterExpression param, Func<Context, Expr, Expr[], Expr> ctor)
+        {
+            var args = expression.Arguments.Select(argExp => Visit(context, environment, argExp, param)).ToArray();
+            //return ctor(context, Visit(context, environment, expression.Object, param), Visit(context, environment, expression.Arguments[0], param));
+            return ctor(context, Visit(context, environment, expression.Object, param), args);
+        }
+
         /// <summary>
         /// Visitor method to translate a method call expression.
         /// </summary>
@@ -1137,7 +1145,20 @@ namespace Z3.LinqBinding
                 return context.MkDistinct(args.ToArray());
             }
 
-            
+            if (method.Name.StartsWith("get_"))
+            {
+                // Assuming it's an indexed property
+                string prop = method.Name.Substring(4);
+                var propinfo = method.DeclaringType.GetProperty(prop);
+                var target = call.Object;
+                var args = call.Arguments;
+                var indexer = Expression.MakeIndex(target, propinfo, args);
+                return Visit(context, environment, indexer, param);
+
+            }
+
+
+
 
             throw new NotSupportedException("Unknown method call:" + method.ToString());
         }

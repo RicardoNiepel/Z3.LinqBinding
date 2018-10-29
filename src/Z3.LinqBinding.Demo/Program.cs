@@ -111,7 +111,7 @@ namespace Z3.LinqBindingDemo
 
             using (var ctx = new Z3Context())
             {
-                ctx.Log = Console.Out;
+                //ctx.Log = Console.Out;
                 var can = new MissionariesAndCannibals() { NbMissionaries = 3, SizeBoat = 2, Length = 30 };
 
                 Console.WriteLine($"Non simplified version");

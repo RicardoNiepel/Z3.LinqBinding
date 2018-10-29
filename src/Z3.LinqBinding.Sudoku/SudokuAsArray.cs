@@ -18,16 +18,16 @@ namespace Z3.LinqBinding.Sudoku
        private static readonly int[] Indices = Enumerable.Range(0, 9).ToArray();
 
       // The List property makes it easier to manipulate cells,
-      public List<int> CellsList = Enumerable.Repeat(0, 81).ToList();
+      public List<int> Cells { get; set; } = Enumerable.Repeat(0, 81).ToList();
 
-      /// <summary>
-      /// The array property is to be used in linq to Z3
-      /// </summary>
-      public int[] Cells
-      {
-         get => CellsList.ToArray();
-         set => CellsList = new List<int>(value);
-      }
+      ///// <summary>
+      ///// The array property is to be used in linq to Z3
+      ///// </summary>
+      //public int[] Cells
+      //{
+      //   get => CellsList.ToArray();
+      //   set => CellsList = new List<int>(value);
+      //}
 
       /// <summary>
       /// Creates a Z3 theorem to solve the sudoku, adding the general constraints, and the mask constraints for this particular Sudoku
@@ -39,10 +39,10 @@ namespace Z3.LinqBinding.Sudoku
          var toReturn = Create(context);
          for (int i = 0; i < 81; i++)
          {
-            if (CellsList[i] != 0)
+            if (Cells[i] != 0)
             {
                var idx = i;
-               var cellValue = CellsList[i];
+               var cellValue = Cells[i];
                toReturn = toReturn.Where(sudoku => sudoku.Cells[idx] == cellValue);
             }
          }
@@ -140,7 +140,7 @@ namespace Z3.LinqBinding.Sudoku
             for (int column = 1; column <= 9; column++)
             {
 
-               var value = CellsList[(row - 1) * 9 + (column - 1)];
+               var value = Cells[(row - 1) * 9 + (column - 1)];
 
                output.Append(value);
                if (column % 3 == 0)
@@ -229,7 +229,7 @@ namespace Z3.LinqBinding.Sudoku
                         cells.Add(cellToAdd.Value);
                         if (cells.Count == 81)
                         {
-                           toReturn.Add(new SudokuAsArray() { CellsList = new List<int>(cells) });
+                           toReturn.Add(new SudokuAsArray() { Cells = new List<int>(cells) });
                            cells.Clear();
                         }
                      }
