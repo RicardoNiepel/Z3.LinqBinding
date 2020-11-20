@@ -428,6 +428,9 @@ namespace Z3.LinqBinding
                 case ExpressionType.Call:
                     return VisitCall(context, environment, (MethodCallExpression)expression, param);
 
+                case ExpressionType.Parameter:
+                    return VisitParameter(context, environment, (ParameterExpression)expression, param);
+
                 default:
                     throw new NotSupportedException("Unsupported expression node type encountered: " + expression.NodeType);
             }
@@ -520,6 +523,18 @@ namespace Z3.LinqBinding
         private Expr VisitUnary(Context context, Dictionary<PropertyInfo, Expr> environment, UnaryExpression expression, ParameterExpression param, Func<Context, Expr, Expr> ctor)
         {
             return ctor(context, Visit(context, environment, expression.Operand, param));
+        }
+
+        private Expr VisitParameter(Context context, Dictionary<PropertyInfo, Expr> environment, ParameterExpression expression, ParameterExpression param)
+        {
+            Expr value;
+            var propertyInfo = environment.FirstOrDefault(p => p.Key.Name == expression.Name).Key;
+            if (!environment.TryGetValue(propertyInfo, out value))
+            {
+                throw new NotSupportedException("Unknown parameter encountered: " + expression.Name + ".");
+            }
+
+            return value;
         }
     }
 }

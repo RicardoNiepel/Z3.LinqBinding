@@ -48,5 +48,10 @@ namespace Z3.LinqBinding
         {
             return new Theorem<T>(base.Context, base.Constraints.Concat(new List<LambdaExpression> { constraint }));
         }
+
+        public Theorem<T> Where(LambdaExpression constraint)
+        {
+            return new Theorem<T>(base.Context, base.Constraints.Concat(new List<LambdaExpression> { constraint }));
+        }
     }
 }
