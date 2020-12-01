@@ -81,6 +81,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Class1.cs" />
     <Compile Include="ITheoremGlobalRewriter.cs" />
     <Compile Include="ITheoremPredicateRewriter.cs" />
     <Compile Include="Symbols.cs" />

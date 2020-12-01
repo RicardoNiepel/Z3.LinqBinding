@@ -135,14 +135,22 @@ namespace Z3.LinqBinding
                 //
                 // Map the environment onto Z3-compatible types.
                 //
-                if (parameterType == typeof(bool))
-                    //environment.Add(parameter, context.MkConst(parameter.Name, context.MkBoolType()));
-                    environment.Add(parameter, context.MkBoolConst(parameter.Name));
-                else if (parameterType == typeof(int))
-                    //environment.Add(parameter, context.MkConst(parameter.Name, context.MkIntType()));
-                    environment.Add(parameter, context.MkIntConst(parameter.Name));
-                else
-                    throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                switch (Type.GetTypeCode(parameterType))
+                {
+                    case TypeCode.Boolean:
+                        //environment.Add(parameter, context.MkConst(parameter.Name, context.MkBoolType()));
+                        environment.Add(parameter, context.MkBoolConst(parameter.Name));
+                        break;
+                    case TypeCode.Int32:
+                        //environment.Add(parameter, context.MkConst(parameter.Name, context.MkIntType()));
+                        environment.Add(parameter, context.MkIntConst(parameter.Name));
+                        break;
+                    case TypeCode.Double:
+                        environment.Add(parameter, context.MkRealConst(parameter.Name));
+                        break;
+                    default:
+                        throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                }
             }
 
             return environment;
@@ -191,12 +199,20 @@ namespace Z3.LinqBinding
                     // Evaluation of the values though the handle in the environment bindings.
                     //
                     Expr val = model.Eval(environment[parameter]);
-                    if (parameter.PropertyType == typeof(bool))
-                        field.SetValue(result, val.IsTrue);
-                    else if (parameter.PropertyType == typeof(int))
-                        field.SetValue(result, ((IntNum)val).Int);
-                    else
-                        throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                    switch (Type.GetTypeCode(parameter.PropertyType))
+                    {
+                        case TypeCode.Boolean:
+                            field.SetValue(result, val.IsTrue);
+                            break;
+                        case TypeCode.Double:
+                            field.SetValue(result, ((RatNum)val).Double);
+                            break;
+                        case TypeCode.Int32:
+                            field.SetValue(result, ((IntNum)val).Int);
+                            break;
+                        default:
+                            throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                    }
                 }
 
                 return result;
@@ -260,11 +276,16 @@ namespace Z3.LinqBinding
         /// <returns>Z3 expression handle.</returns>
         private static Expr VisitConstant(Context context, ConstantExpression constant)
         {
-            if (constant.Type == typeof(int))
-                //return context.MkNumeral((int)constant.Value, context.MkIntType());
-                return context.MkNumeral((int)constant.Value, context.IntSort);
-            else if (constant.Type == typeof(bool))
-                return (bool)constant.Value ? context.MkTrue() : context.MkFalse();
+            switch (Type.GetTypeCode(constant.Type))
+            {
+                case TypeCode.Boolean:
+                    return (bool)constant.Value ? context.MkTrue() : context.MkFalse();
+                case TypeCode.Double:
+                    var fraction = new Fraction((double)constant.Value);
+                    return context.MkReal((int)fraction.Numerator, (int)fraction.Denominator);
+                case TypeCode.Int32:
+                    return context.MkNumeral((int)constant.Value, context.IntSort);
+            }
 
             throw new NotSupportedException("Unsupported constant type.");
         }
@@ -431,6 +452,9 @@ namespace Z3.LinqBinding
                 case ExpressionType.Parameter:
                     return VisitParameter(context, environment, (ParameterExpression)expression, param);
 
+                case ExpressionType.Convert:
+                    return VisitConvert(context, environment, (UnaryExpression)expression, param);
+
                 default:
                     throw new NotSupportedException("Unsupported expression node type encountered: " + expression.NodeType);
             }
@@ -535,6 +559,27 @@ namespace Z3.LinqBinding
             }
 
             return value;
+        }
+
+        private Expr VisitConvert(Context context, Dictionary<PropertyInfo, Expr> environment, UnaryExpression expression, ParameterExpression param)
+        {
+            if (expression.Type == expression.Operand.Type)
+            {
+                return Visit(context, environment, expression.Operand, param);                
+            }
+
+            var inner = Visit(context, environment, expression.Operand, param);
+
+            switch (Type.GetTypeCode(expression.Type))
+            {
+                case TypeCode.Double:
+                    return context.MkInt2Real((IntExpr)inner);
+                case TypeCode.Int32:
+                    return context.MkReal2Int((RealExpr)inner);
+            }
+            //return VisitUnary(context, environment, expression, param, (ctx, a) => ctx.mkint((ArithExpr)a));
+            //return null;
+            throw new NotImplementedException($"Cast '{expression.Operand}' to {expression.Type.Name}");
         }
     }
 }
