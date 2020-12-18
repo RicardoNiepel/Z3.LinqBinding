@@ -81,7 +81,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Fraction.cs" />
     <Compile Include="ITheoremGlobalRewriter.cs" />
     <Compile Include="ITheoremPredicateRewriter.cs" />
     <Compile Include="Symbols.cs" />
@@ -94,6 +94,7 @@
     <Compile Include="TheoremPredicateRewriterAttribute.cs" />
     <Compile Include="TheoremVariableTypeMappingAttribute.cs" />
     <Compile Include="Theorem`1.cs" />
+    <Compile Include="UnsatisfiableTheoremException.cs" />
     <Compile Include="Z3Context.cs" />
     <Compile Include="Z3Methods.cs" />
   </ItemGroup>

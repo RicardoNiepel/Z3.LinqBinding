@@ -98,7 +98,7 @@ namespace Z3.LinqBinding
                 Status status = solver.Check();
                 if (status != Status.SATISFIABLE)
                 {
-                    return default(T);
+                    throw new UnsatisfiableTheoremException();
                 }
 
                 return GetSolution<T>(solver.Model, environment);
@@ -111,7 +111,7 @@ namespace Z3.LinqBinding
         /// <typeparam name="T">Theorem environment type to create a mapping table for.</typeparam>
         /// <param name="context">Z3 context.</param>
         /// <returns>Environment mapping table from .NET properties onto Z3 handles.</returns>
-        private static Dictionary<PropertyInfo, Expr> GetEnvironment<T>(Context context)
+        protected virtual Dictionary<PropertyInfo, Expr> GetEnvironment<T>(Context context)
         {
             var environment = new Dictionary<PropertyInfo, Expr>();
 
@@ -156,6 +156,23 @@ namespace Z3.LinqBinding
             return environment;
         }
 
+        protected virtual T CreateResultObject<T>()
+        {
+            Type t = typeof(T);
+            if (t.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any())
+            {
+                // Anonymous types have a constructor that takes in values for all its properties.
+                // However, we don't know the order and it's hard to correlate back the parameters
+                // to the underlying properties. So, we want to bypass that constructor altogether
+                // by using the FormatterServices to create an uninitialized (all-zero) instance.
+                return (T)FormatterServices.GetUninitializedObject(t);
+            }
+            //
+            // Straightforward case of having an "onymous type" at hand.
+            //
+            return Activator.CreateInstance<T>();
+        }
+
         /// <summary>
         /// Gets the solution object for the solved theorem.
         /// </summary>
@@ -163,24 +180,17 @@ namespace Z3.LinqBinding
         /// <param name="model">Z3 model to evaluate theorem parameters under.</param>
         /// <param name="environment">Environment with bindings of theorem variables to Z3 handles.</param>
         /// <returns>Instance of the enviroment type with theorem-satisfying values.</returns>
-        private static T GetSolution<T>(Model model, Dictionary<PropertyInfo, Expr> environment)
+        private T GetSolution<T>(Model model, Dictionary<PropertyInfo, Expr> environment)
         {
             Type t = typeof(T);
 
+            T result = CreateResultObject<T>();
             //
             // Determine whether T is a compiler-generated type, indicating an anonymous type.
             // This check might not be reliable enough but works for now.
             //
             if (t.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any())
             {
-                //
-                // Anonymous types have a constructor that takes in values for all its properties.
-                // However, we don't know the order and it's hard to correlate back the parameters
-                // to the underlying properties. So, we want to bypass that constructor altogether
-                // by using the FormatterServices to create an uninitialized (all-zero) instance.
-                //
-                T result = (T)FormatterServices.GetUninitializedObject(t);
-
                 //
                 // Here we take advantage of undesirable knowledge on how anonymous types are
                 // implemented by the C# compiler. This is risky but we can live with it for
@@ -219,11 +229,6 @@ namespace Z3.LinqBinding
             }
             else
             {
-                //
-                // Straightforward case of having an "onymous type" at hand.
-                //
-                T result = Activator.CreateInstance<T>();
-
                 foreach (var parameter in environment.Keys)
                 {
                     //
@@ -241,12 +246,20 @@ namespace Z3.LinqBinding
                     //
                     Expr val = model.Eval(environment[parameter]);
                     object value;
-                    if (parameterType == typeof(bool))
-                        value = val.IsTrue;
-                    else if (parameterType == typeof(int))
-                        value = ((IntNum)val).Int;
-                    else
-                        throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                    switch (Type.GetTypeCode(parameterType))
+                    {
+                        case TypeCode.Boolean:
+                            value = val.IsTrue;
+                            break;
+                        case TypeCode.Int32:
+                            value = ((IntNum)val).Int;
+                            break;
+                        case TypeCode.Double:
+                            value = ((RatNum)val).Double;
+                            break;
+                        default:
+                            throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                    }
 
                     //
                     // If there was a type mapping, we need to convert back to the original type.
@@ -455,6 +468,9 @@ namespace Z3.LinqBinding
                 case ExpressionType.Convert:
                     return VisitConvert(context, environment, (UnaryExpression)expression, param);
 
+                case ExpressionType.Power:
+                    return VisitBinary(context, environment, (BinaryExpression)expression, param, (ctx, a, b) => ctx.MkPower((ArithExpr)a, (ArithExpr)b));
+
                 default:
                     throw new NotSupportedException("Unsupported expression node type encountered: " + expression.NodeType);
             }
@@ -531,8 +547,14 @@ namespace Z3.LinqBinding
                 var args = from arg in arr.Expressions select Visit(context, environment, arg, param);
                 return context.MkDistinct(args.ToArray());
             }
-            else
-                throw new NotSupportedException("Unknown method call:" + method.ToString());
+            
+            if (method.DeclaringType == typeof(Math) && method.Name == "Sqrt")
+            {
+                var result = Expression.Power(call.Arguments[0], Expression.Constant(2.0));
+                return Visit(context, environment, result, param);
+            }
+
+            throw new NotSupportedException("Unknown method call:" + method.ToString());
         }
 
         /// <summary>
@@ -577,8 +599,7 @@ namespace Z3.LinqBinding
                 case TypeCode.Int32:
                     return context.MkReal2Int((RealExpr)inner);
             }
-            //return VisitUnary(context, environment, expression, param, (ctx, a) => ctx.mkint((ArithExpr)a));
-            //return null;
+            
             throw new NotImplementedException($"Cast '{expression.Operand}' to {expression.Type.Name}");
         }
     }
