@@ -81,6 +81,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Environment.cs" />
     <Compile Include="Fraction.cs" />
     <Compile Include="ITheoremGlobalRewriter.cs" />
     <Compile Include="ITheoremPredicateRewriter.cs" />

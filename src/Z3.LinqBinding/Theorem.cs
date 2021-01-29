@@ -111,9 +111,9 @@ namespace Z3.LinqBinding
         /// <typeparam name="T">Theorem environment type to create a mapping table for.</typeparam>
         /// <param name="context">Z3 context.</param>
         /// <returns>Environment mapping table from .NET properties onto Z3 handles.</returns>
-        protected virtual Dictionary<PropertyInfo, Expr> GetEnvironment<T>(Context context)
+        protected virtual Environment GetEnvironment<T>(Context context)
         {
-            var environment = new Dictionary<PropertyInfo, Expr>();
+            var environment = new Environment();
 
             //
             // All public properties are considered part of the theorem's environment.
@@ -180,7 +180,7 @@ namespace Z3.LinqBinding
         /// <param name="model">Z3 model to evaluate theorem parameters under.</param>
         /// <param name="environment">Environment with bindings of theorem variables to Z3 handles.</param>
         /// <returns>Instance of the enviroment type with theorem-satisfying values.</returns>
-        private T GetSolution<T>(Model model, Dictionary<PropertyInfo, Expr> environment)
+        private T GetSolution<T>(Model model, Environment environment)
         {
             Type t = typeof(T);
 
@@ -252,13 +252,19 @@ namespace Z3.LinqBinding
                             value = val.IsTrue;
                             break;
                         case TypeCode.Int32:
+                            if (val is IntExpr intExpr)
+                            {
+                                value = 0;
+                                break;
+                            }                            
                             value = ((IntNum)val).Int;
                             break;
                         case TypeCode.Double:
                             value = ((RatNum)val).Double;
                             break;
                         default:
-                            throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
+                            value = GetSolutionValue(parameter, model, environment);
+                            break;
                     }
 
                     //
@@ -279,6 +285,11 @@ namespace Z3.LinqBinding
 
                 return result;
             }
+        }
+
+        protected virtual object GetSolutionValue(PropertyInfo parameter, Model model, Environment environment)
+        {
+            throw new NotSupportedException($"Unsupported parameter type for {parameter.Name} ({Type.GetTypeCode(parameter.PropertyType)})");
         }
 
         /// <summary>
@@ -310,26 +321,28 @@ namespace Z3.LinqBinding
         /// <param name="member">Member expression.</param>
         /// <param name="param">Parameter used to express the constraint on.</param>
         /// <returns>Z3 expression handle.</returns>
-        private static Expr VisitMember(Dictionary<PropertyInfo, Expr> environment, MemberExpression member, ParameterExpression param)
+        private static Expr VisitMember(Environment environment, MemberExpression member, ParameterExpression param)
         {
             //
             // E.g. Symbols l = ...;
             //      theorem.Where(s => l.X1)
             //                         ^^
-            //
-            if (member.Expression != param)
+            /*if (member.Expression != param)
+            {
                 throw new NotSupportedException("Encountered member access not targeting the constraint parameter.");
+            }*/
 
             //
             // Only members we allow currently are direct accesses to the theorem's variables
             // in the environment type. So we just try to find the mapping from the environment
             // bindings table.
             //
-            PropertyInfo property;
-            Expr value;
-            if ((property = member.Member as PropertyInfo) == null
-                || !environment.TryGetValue(property, out value))
+            //PropertyInfo property = member.Member as PropertyInfo;
+            if (!environment.TryGetExpression(member, param, out var value))
+            {
+                //if (property == null || !environment.TryGetValue(property, out value))
                 throw new NotSupportedException("Unknown parameter encountered: " + member.Member.Name + ".");
+            }
 
             return value;
         }
@@ -340,7 +353,7 @@ namespace Z3.LinqBinding
         /// <param name="context">Z3 context.</param>
         /// <param name="environment">Environment with bindings of theorem variables to Z3 handles.</param>
         /// <typeparam name="T">Theorem environment type.</typeparam>
-        private void AssertConstraints<T>(Context context, Solver solver, Dictionary<PropertyInfo, Expr> environment)
+        private void AssertConstraints<T>(Context context, Solver solver, Environment environment)
         {
             var constraints = _constraints;
 
@@ -391,7 +404,7 @@ namespace Z3.LinqBinding
         /// <param name="expression">LINQ expression tree node to be translated.</param>
         /// <param name="param">Parameter used to express the constraint on.</param>
         /// <returns>Z3 expression handle.</returns>
-        private Expr Visit(Context context, Dictionary<PropertyInfo, Expr> environment, Expression expression, ParameterExpression param)
+        private Expr Visit(Context context, Environment environment, Expression expression, ParameterExpression param)
         {
             //
             // Largely table-driven mechanism, providing constructor lambdas to generic Visit*
@@ -485,7 +498,7 @@ namespace Z3.LinqBinding
         /// <param name="ctor">Constructor to combine recursive visitor results.</param>
         /// <param name="param">Parameter used to express the constraint on.</param>
         /// <returns>Z3 expression handle.</returns>
-        private Expr VisitBinary(Context context, Dictionary<PropertyInfo, Expr> environment, BinaryExpression expression, ParameterExpression param, Func<Context, Expr, Expr, Expr> ctor)
+        private Expr VisitBinary(Context context, Environment environment, BinaryExpression expression, ParameterExpression param, Func<Context, Expr, Expr, Expr> ctor)
         {
             return ctor(context, Visit(context, environment, expression.Left, param), Visit(context, environment, expression.Right, param));
         }
@@ -498,7 +511,7 @@ namespace Z3.LinqBinding
         /// <param name="call">Method call expression.</param>
         /// <param name="param">Parameter used to express the constraint on.</param>
         /// <returns>Z3 expression handle.</returns>
-        private Expr VisitCall(Context context, Dictionary<PropertyInfo, Expr> environment, MethodCallExpression call, ParameterExpression param)
+        private Expr VisitCall(Context context, Environment environment, MethodCallExpression call, ParameterExpression param)
         {
             var method = call.Method;
 
@@ -566,16 +579,15 @@ namespace Z3.LinqBinding
         /// <param name="ctor">Constructor to combine recursive visitor results.</param>
         /// <param name="param">Parameter used to express the constraint on.</param>
         /// <returns>Z3 expression handle.</returns>
-        private Expr VisitUnary(Context context, Dictionary<PropertyInfo, Expr> environment, UnaryExpression expression, ParameterExpression param, Func<Context, Expr, Expr> ctor)
+        private Expr VisitUnary(Context context, Environment environment, UnaryExpression expression, ParameterExpression param, Func<Context, Expr, Expr> ctor)
         {
             return ctor(context, Visit(context, environment, expression.Operand, param));
         }
 
-        private Expr VisitParameter(Context context, Dictionary<PropertyInfo, Expr> environment, ParameterExpression expression, ParameterExpression param)
+        private Expr VisitParameter(Context context, Environment environment, ParameterExpression expression, ParameterExpression param)
         {
             Expr value;
-            var propertyInfo = environment.FirstOrDefault(p => p.Key.Name == expression.Name).Key;
-            if (!environment.TryGetValue(propertyInfo, out value))
+            if (!environment.TryGetValue(expression.Name, out value))
             {
                 throw new NotSupportedException("Unknown parameter encountered: " + expression.Name + ".");
             }
@@ -583,7 +595,7 @@ namespace Z3.LinqBinding
             return value;
         }
 
-        private Expr VisitConvert(Context context, Dictionary<PropertyInfo, Expr> environment, UnaryExpression expression, ParameterExpression param)
+        private Expr VisitConvert(Context context, Environment environment, UnaryExpression expression, ParameterExpression param)
         {
             if (expression.Type == expression.Operand.Type)
             {
