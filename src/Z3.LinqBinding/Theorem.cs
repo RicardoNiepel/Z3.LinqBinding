@@ -252,11 +252,11 @@ namespace Z3.LinqBinding
                             value = val.IsTrue;
                             break;
                         case TypeCode.Int32:
-                            if (val is IntExpr intExpr)
-                            {
-                                value = 0;
-                                break;
-                            }                            
+                            //if (val is IntExpr intExpr)
+                            //{
+                            //    value = 0;
+                            //    break;
+                            //}                            
                             value = ((IntNum)val).Int;
                             break;
                         case TypeCode.Double:
