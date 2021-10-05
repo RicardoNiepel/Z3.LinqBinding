@@ -214,12 +214,28 @@ namespace Z3.LinqBinding
                         case TypeCode.Boolean:
                             field.SetValue(result, val.IsTrue);
                             break;
-                        case TypeCode.Double:
-                            field.SetValue(result, ((RatNum)val).Double);
-                            break;
                         case TypeCode.Int32:
-                            field.SetValue(result, ((IntNum)val).Int);
-                            break;
+                            if (val is IntNum intNum)
+                            {
+                                value = intNum.Int;
+                                break;
+                            }
+                            else //if (val is IntExpr intExpr)
+                            {
+                                value = 0;
+                                break;
+                            }
+                        case TypeCode.Double:
+                            if (val is RatNum ratNum)
+                            {
+                                value = ratNum.Double;
+                                break;
+                            }
+                            else //if (val is RatExpr ratExpr
+                            {
+                                value = 0;
+                                break;
+                            }
                         default:
                             throw new NotSupportedException("Unsupported parameter type for " + parameter.Name + ".");
                     }
@@ -252,16 +268,27 @@ namespace Z3.LinqBinding
                             value = val.IsTrue;
                             break;
                         case TypeCode.Int32:
-                            //if (val is IntExpr intExpr)
-                            //{
-                            //    value = 0;
-                            //    break;
-                            //}                            
-                            value = ((IntNum)val).Int;
-                            break;
+                            if (val is IntNum intNum)
+                            {
+                                value = intNum.Int;
+                                break;
+                            }
+                            else //if (val is IntExpr intExpr)
+                            {
+                                value = 0;
+                                break;
+                            }
                         case TypeCode.Double:
-                            value = ((RatNum)val).Double;
-                            break;
+                            if (val is RatNum ratNum)
+                            {
+                                value = ratNum.Double;
+                                break;
+                            }
+                            else //if (val is RatExpr ratExpr
+                            {
+                                value = 0;
+                                break;
+                            }
                         default:
                             value = GetSolutionValue(parameter, model, environment);
                             break;
