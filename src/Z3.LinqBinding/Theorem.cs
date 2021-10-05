@@ -217,23 +217,23 @@ namespace Z3.LinqBinding
                         case TypeCode.Int32:
                             if (val is IntNum intNum)
                             {
-                                value = intNum.Int;
+                                field.SetValue(result, intNum.Int);
                                 break;
                             }
                             else //if (val is IntExpr intExpr)
                             {
-                                value = 0;
+                                field.SetValue(result, 0);
                                 break;
                             }
                         case TypeCode.Double:
                             if (val is RatNum ratNum)
                             {
-                                value = ratNum.Double;
+                                field.SetValue(result, ratNum.Double);
                                 break;
                             }
                             else //if (val is RatExpr ratExpr
                             {
-                                value = 0;
+                                field.SetValue(result, 0);
                                 break;
                             }
                         default:
