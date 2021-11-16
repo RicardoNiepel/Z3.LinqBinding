@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z3.LinqBinding", "Z3.LinqBinding\Z3.LinqBinding.csproj", "{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}"
 EndProject
@@ -11,24 +11,41 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z3.LinqBinding.Demo", "Z3.L
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Debug|x64.ActiveCfg = Debug|x64
+		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Debug|x64.Build.0 = Debug|x64
 		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Debug|x86.ActiveCfg = Debug|x86
 		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Debug|x86.Build.0 = Debug|x86
+		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Release|x64.ActiveCfg = Release|x64
+		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Release|x64.Build.0 = Release|x64
 		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Release|x86.ActiveCfg = Release|x86
 		{5E7DD7ED-9AC0-4095-AB6B-A6BF21FE5B7F}.Release|x86.Build.0 = Release|x86
+		{9921E34D-F22D-4627-94B9-D871EB586C14}.Debug|x64.ActiveCfg = Debug|x64
+		{9921E34D-F22D-4627-94B9-D871EB586C14}.Debug|x64.Build.0 = Debug|x64
 		{9921E34D-F22D-4627-94B9-D871EB586C14}.Debug|x86.ActiveCfg = Debug|x86
 		{9921E34D-F22D-4627-94B9-D871EB586C14}.Debug|x86.Build.0 = Debug|x86
+		{9921E34D-F22D-4627-94B9-D871EB586C14}.Release|x64.ActiveCfg = Release|x64
+		{9921E34D-F22D-4627-94B9-D871EB586C14}.Release|x64.Build.0 = Release|x64
 		{9921E34D-F22D-4627-94B9-D871EB586C14}.Release|x86.ActiveCfg = Release|x86
 		{9921E34D-F22D-4627-94B9-D871EB586C14}.Release|x86.Build.0 = Release|x86
+		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Debug|x64.ActiveCfg = Debug|x64
+		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Debug|x64.Build.0 = Debug|x64
 		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Debug|x86.ActiveCfg = Debug|x86
 		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Debug|x86.Build.0 = Debug|x86
+		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Release|x64.ActiveCfg = Release|x64
+		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Release|x64.Build.0 = Release|x64
 		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Release|x86.ActiveCfg = Release|x86
 		{E11C21EB-3336-458F-9451-67F8E8F2352D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7AA0919A-3929-4EF6-BCDD-4D73EB0CDD91}
 	EndGlobalSection
 EndGlobal
